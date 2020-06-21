@@ -93,7 +93,7 @@ def init_log(level, log_path, log_name = "", in_console = False) :
     log_name = "Log"
 
   # Write a log header
-  from base.log.log_util import log_print_imp
+  from .log_util import log_print_imp
   log_print_imp("{:*^80}".format(""), without_prefix = True)
   log_print_imp("*" + "{: ^78}".format("") + "*", without_prefix = True)
   title = "{} {:%Y-%m-%d %H:%M:%S}".format(log_name, date)
@@ -126,7 +126,7 @@ def deinit_log() :
     # Write a log footer
     date = datetime.datetime.now()
     title = " {:%Y-%m-%d %H:%M:%S} ".format(date)
-    from base.log.log_util import log_print_imp
+    from .log_util import log_print_imp
     log_print_imp("\n" + "{:*^80}".format(title) + "\n", without_prefix = True)
 
     # Close a log file

@@ -8,10 +8,10 @@ import os
 import sys
 import threading
 
-from . import log as log
+from functools import wraps
 from ..errors import *
 from ..file_util import *
-from functools import wraps
+from . import log as log
 
 
 # Export

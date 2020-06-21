@@ -32,24 +32,23 @@ def create_unique_file_name(file_prefix, file_affix, file_ext = "") :
 # Gets a file as string
 #
 def get_file_as_string(path, charset = "utf-8") :
-  import base.errors
-  import base.log
+  from .errors import Error
+  from .log import log_print_err
 
   if not os.path.exists(path) :
-    error = base.errors.Error(
-        errObjNotFound, "Path '{}' doesn't exist".format(path))
-    base.log.log_print_err("Opening file failed", error_code = error)
+    error = Error(errObjNotFound, "Path '{}' doesn't exist".format(path))
+    log_print_err("Opening file failed", error_code = error)
     return error, None
 
   try :
     with open(path, 'r', encoding = charset) as file:
       result = file.read()
   except :
-    error = base.errors.Error(base.errors.errException, sys.exc_info()[1])
-    base.log.log_print_err("Reading file '{}' failed", path, error_code = error)
+    error = Error(errException, sys.exc_info()[1])
+    log_print_err("Reading file '{}' failed", path, error_code = error)
     return error, None
 
-  return base.errors.Error(base.errors.errOk), result
+  return Error(errOk), result
 
 #
 # Normalizes a path

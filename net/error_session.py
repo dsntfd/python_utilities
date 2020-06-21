@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 from aiohttp import web
-from base.errors import *
-from base.log import *
-from net.session_in import *
+from ..base.errors import *
+from ..base.log import *
+from .session_in import *
 
 
 #

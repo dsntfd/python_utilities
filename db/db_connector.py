@@ -5,8 +5,8 @@
 import asyncio
 import sys
 
-from base.errors import *
-from base.log import *
+from ..base.errors import *
+from ..base.log import *
 
 
 #

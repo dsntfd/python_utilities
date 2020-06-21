@@ -45,6 +45,50 @@ def err_failure(error) :
   return not err_success(error)
 
 #
+# Converts Error to Value
+#
+def error_to_value(error) :
+  """
+    Convert Error object to Value
+
+    :param error: Error object for transformation
+    :type error: Error
+    :return: Value object describes error
+    :rtype: Value
+  """
+  from .value import Value
+
+  error_dict = { "id" : Value(err_number(error)), }
+  if len(error.error_msg) > 0 :
+    error_dict["description"] = Value(error.error_msg)
+
+  result_dict = {
+      "error" if err_failure(error) else "warning" :
+      Value(error_dict), }
+  result = Value(result_dict)
+  return result
+
+#
+# Serializes Error to json
+#
+def error_to_json(error) :
+  """
+    Convert Error object to response json
+
+    :param error: Error object for transformation
+    :type error: Error
+    :return: json describes error
+    :rtype: string
+  """
+  from .value import serialize_value_to_json
+
+  json_text, error_ret = serialize_value_to_json(error_to_value(error))
+  if err_failure(error_ret) :
+    return "{\"error\":{\"id\":1,\"description\":\"Oops!\"}}"
+
+  return json_text
+
+#
 # Class Error
 #
 class Error :
