@@ -99,7 +99,7 @@ def init_log(level, log_path, log_name = "", in_console = False) :
   title = "{} {:%Y-%m-%d %H:%M:%S}".format(log_name, date)
   log_print_imp("*" + "{: ^78}".format(title) + "*", without_prefix = True)
   log_print_imp("*" + "{: ^78}".format("") + "*", without_prefix = True)
-  log_print_imp("{:*^80}\n".format(""), without_prefix = True)
+  log_print_imp("{:*^80}".format(""), without_prefix = True)
 
 #
 # Initializes logging system by command line

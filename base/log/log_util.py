@@ -63,28 +63,46 @@ def log_print_vrb(msg, *args, error_code = None, exec_time = 0.0,
                    exec_time = exec_time, without_prefix = without_prefix,
                    out_frame_index = out_frame_index + 1, **kwargs)
 
-def log_print_parameters(parameters) :
+def log_print_parameters(name, parameters) :
   # Check parameters to be dictionary
-  if not isinstance(parameters, dict) :
+  if not isinstance(parameters, list) or len(parameters) == 0 :
     return
 
   # Calculate size of string
-  str_length = max(parameters.keys(), key = lambda k: len("{}".format(k)))
-  str_length = len("{}".format(str_length))
+  item_with_max_first_element = max(
+      parameters,
+      key = lambda p: len("{}".format(p[0]))
+                      if isinstance(p, list) and len(p) > 0 else
+                      0)
+  if len(item_with_max_first_element) > 0 :
+    str_length = len("{}".format(item_with_max_first_element[0]))
+  else :
+    return
+
   if str_length == 0 :
     return
 
   # Make string for printing
   str_template = " {: <" + "{:d}".format(str_length + 1) + "}"
-  str = "Parameters:\n"
-  for key, value in parameters.items() :
-    str += str_template.format("{}".format(key)) + "- "
-    if isinstance(value, bool) :
-      str += "{}".format("True" if value else "False")
-    elif isinstance(value, int) :
-      str += "{:d}".format(value)
-    else :
-      str += "{}".format("{}".format(value))
+  str = "\n{}\n".format(name)
+  for p in parameters :
+    if not isinstance(p, list) or len(p) == 0 :
+      continue
+
+    str += str_template.format("{}".format(p[0])) + "- "
+    for i in range(1, len(p)) :
+      if i > 1 :
+        str += " ("
+
+      if isinstance(p[i], bool) :
+        str += "{}".format("True" if p[i] else "False")
+      elif isinstance(p[i], int) :
+        str += "{:d}".format(p[i])
+      else :
+        str += "{}".format("{}".format(p[i]))
+
+      if i > 1 :
+        str += ")"
 
     str += "\n"
 
