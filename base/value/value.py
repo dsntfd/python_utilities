@@ -224,30 +224,30 @@ class Value :
 
     return result
 
-  def find_path_of_type(self, path, type) :
+  def find_path_of_type(self, path, type, real_value = False) :
     result = self.find_path(path)
     if result is None or result.value_type != type :
       return None
 
-    return result
+    return result.value if real_value else result
 
-  def find_bool_path(self, path) :
-    return self.find_path_of_type(path, Type.BOOLEAN)
+  def find_bool_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.BOOLEAN, real_value)
 
-  def find_int_path(self, path) :
-    return self.find_path_of_type(path, Type.INTEGER)
+  def find_int_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.INTEGER, real_value)
 
-  def find_double_path(self, path) :
-    return self.find_path_of_type(path, Type.DOUBLE)
+  def find_double_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.DOUBLE, real_value)
 
-  def find_string_path(self, path) :
-    return self.find_path_of_type(path, Type.STRING)
+  def find_string_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.STRING, real_value)
 
-  def find_dict_path(self, path) :
-    return self.find_path_of_type(path, Type.DICTIONARY)
+  def find_dict_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.DICTIONARY, real_value)
 
-  def find_list_path(self, path) :
-    return self.find_path_of_type(path, Type.LIST)
+  def find_list_path(self, path, real_value = False) :
+    return self.find_path_of_type(path, Type.LIST, real_value)
 
   def is_matching_type(self, value) :
     """ Check 'value' to match the object """
