@@ -72,6 +72,10 @@ class SessionIn (Session) :
     return Error(errOk)
 
   @property
+  def counter_name(self) :
+    return "session_in"
+
+  @property
   def server_software(self) :
     return self._server_software
 

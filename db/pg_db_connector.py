@@ -3,13 +3,20 @@
 # found in the LICENSE file.
 
 import asyncio
+import hashlib
 
 from aiopg.sa import create_engine
 from sqlalchemy.dialects import postgresql
 from ..base.errors import *
 from ..base.log import *
+from ..base.uid_util import *
 from .db_connector import *
 
+# Export
+__all__ = ('PgDBConnector',)
+
+# Query counter name
+_QUERY_COUNTER_NAME = "queries"
 
 #
 # Class DBConnector
@@ -18,6 +25,9 @@ class PgDBConnector (DBConnector) :
   def __init__(self, user = "", password = "", database = "",
                host = "", port = 5432) :
     DBConnector.__init__(self, user, password, database, host, port)
+
+    self.__query_counter = None
+    self.__query_ids = set()
 
   @log_async_function_body()
   async def deinit(self) :
@@ -35,16 +45,36 @@ class PgDBConnector (DBConnector) :
   @log_async_function_body()
   async def execute(self, query) :
     """ Execute query """
+    query_str = None
     try :
       # https://stackoverflow.com/questions/5631078/sqlalchemy-print-the-actual-query
       # compile_kwargs={"literal_binds": True}
-      log_print_vrb(
-          "SQL query: \n{}", str(query.compile(dialect = postgresql.dialect())))
+      query_str = str(query.compile(dialect = postgresql.dialect()))
+      log_print_vrb("SQL query: \n{}", query_str)
     except :
       log_print_vrb("Can't convert SQL query to string ({})", sys.exc_info()[1])
 
+    # Generate query id if it needs
+    query_uid = None
+    if self.__query_counter is not None :
+      query_uid = create_uid()
+
     try :
       async with self._engine.acquire() as connection:
+        # Start counter
+        query_hash = None
+        counter = None
+        if self.__query_counter is not None :
+          self.__query_counter.start(query_uid)
+          if query_str is not None :
+            query_hash = hashlib.sha256(query_str.encode("utf-8")).hexdigest()
+            counter = self.add_counter(["query_details", query_hash])
+            counter.start(query_uid)
+            if query_hash not in self.__query_ids :
+              log_print_imp("SQL query (id - {}): \n{}", query_hash, query_str)
+              self.__query_ids.add(query_hash)
+
+        # Execute a query
         db_result = await connection.execute(query)
         result = None
         if db_result.returns_rows :
@@ -58,10 +88,22 @@ class PgDBConnector (DBConnector) :
             result.append(row_values)
             row = await db_result.fetchone()
 
+        # Stop counter
+        if self.__query_counter is not None :
+          self.__query_counter.stop(query_uid)
+          if counter is not None :
+            counter.stop(query_uid)
+
         return Error(errOk), result
     except :
       error = Error(errExecuteFailed, sys.exc_info()[1])
       log_print_err("Query executing failed", error_code = error)
+      # Stop counter
+      if self.__query_counter is not None :
+        self.__query_counter.stop(query_uid)
+        if counter is not None :
+          counter.stop(query_uid)
+
       return error, None
 
     error = Error(errUnknown, "Unknown state has been reached")
@@ -86,3 +128,13 @@ class PgDBConnector (DBConnector) :
       return error
 
     return Error(errOk)
+
+  # Initializes activity counters
+  def init_activity_counters(self, count_time_flag = True) :
+    super().init_activity_counters(count_time_flag)
+    self.__query_counter = self.add_counter([_QUERY_COUNTER_NAME])
+
+  # Denitializes activity counters
+  def deinit_activity_counters(self) :
+    self.__query_counter = None
+    super().deinit_activity_counters()

@@ -34,3 +34,7 @@ class ErrorSession (SessionIn) :
         text = "Url isn't supported - \'{}\'".format(self.request.url),
         status = 200, charset = "utf-8"))
     return Error(errOk)
+
+  @property
+  def counter_name(self) :
+    return "error_session"

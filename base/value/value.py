@@ -249,6 +249,32 @@ class Value :
   def find_list_path(self, path, real_value = False) :
     return self.find_path_of_type(path, Type.LIST, real_value)
 
+  def set_path(self, path, value) :
+    if not isinstance(path, list) :
+      self._operation_error = \
+          Error(errInvalidParameter, "Parameter \'path\' is invalid")
+      log_print_err(None, error_code = self._operation_error)
+      return False
+
+    if len(path) == 0 :
+      self.value = value.value if isinstance(value, Value) else value
+      return err_success(self._operation_error)
+
+    parent = self
+    for item in path[:-1] :
+      if parent.value_type != Type.DICTIONARY :
+        self._operation_error = \
+            Error(errInvalidParameter, "Parameter \'path\' is invalid")
+        log_print_err(None, error_code = self._operation_error)
+        return False
+
+      if item not in parent :
+        parent[item] = Value(dict())
+
+      parent = parent[item]
+
+    parent[path[-1]] = value if isinstance(value, Value) else Value(value)
+
   def is_matching_type(self, value) :
     """ Check 'value' to match the object """
     value_type = Value.get_value_type(value)

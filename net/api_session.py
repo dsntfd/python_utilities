@@ -45,6 +45,10 @@ class ApiSession (SessionIn) :
     return self._charset
 
   @property
+  def counter_name(self) :
+    return "api_session"
+
+  @property
   def function_dependency_map(self) :
     """ Function dependency map """
     return self._function_dependency_map
@@ -159,8 +163,18 @@ class ApiSession (SessionIn) :
         break
 
       ## Call function
+      ### Start counter
+      counter = self.web_server.add_counter(
+          [self.counter_name, "api", function_lower])
+      if counter is not None : counter.start(self.uid)
+
       function_result, error = await self._function_map[function_lower](
           self, api_request[function])
+
+      ### Stop counter
+      if counter is not None : counter.stop(self.uid)
+
+      ### Check result
       if err_failure(error) :
         self._error_code = error
         log_print_err(None, error_code = self._error_code)

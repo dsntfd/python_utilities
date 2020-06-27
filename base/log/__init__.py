@@ -4,6 +4,8 @@
 
 from .log import *
 from .log_util import *
+from .activity_counter import *
 
-__all__ = (log.__all__ +
+__all__ = (activity_counter.__all__ +
+           log.__all__ +
            log_util.__all__)

@@ -11,7 +11,6 @@ from ..base.uid_util import *
 from .net_util import *
 from .web_server import *
 
-
 #
 # Class Session
 #
@@ -41,10 +40,17 @@ class Session :
   @log_async_function_body()
   async def run(self) :
     """ Run execution of session """
+    # Start counter
+    counter = self.web_server.add_counter([self.counter_name])
+    if counter is not None : counter.start(self.uid)
+
     #  Do main work
     self._active = True
     result = await self._do_work()
     self._active = False
+
+    # Stop counter
+    if counter is not None : counter.stop(self.uid)
 
     # Signal that work have been done if it is necessary
     if self._run_completed_event is not None :
@@ -76,6 +82,10 @@ class Session :
   @cache_control.setter
   def cache_control(self, cache_control) :
     self._cache_control = cache_control
+
+  @property
+  def counter_name(self) :
+    return "session"
 
   @property
   def error(self) :

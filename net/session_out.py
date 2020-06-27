@@ -155,6 +155,10 @@ class SessionOut (Session) :
     self._body = body
 
   @property
+  def counter_name(self) :
+    return "session_out"
+
+  @property
   def headers(self) :
     """ Request's headers """
     return self._headers

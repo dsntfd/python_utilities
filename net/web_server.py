@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import asyncio
+import datetime
 import sys
 import threading
 
@@ -10,12 +11,18 @@ from aiohttp import web
 from ..base.errors import *
 from ..base.log import *
 from ..base.uid_util import *
+from ..base.value import *
 from ..base.worker_thread import *
 from .net_util import *
 from .session_factory import *
 
 # Export
 __all__ = ('WebServer', 'run_web_server', 'stop_web_server',)
+
+# Json names
+_JSON_NAME_ID = "__id__"
+_JSON_NAME_STARTED_AT = "__started_at__"
+_JSON_NAME_VERSION = "__version__"
 
 #
 # Global variables
@@ -52,19 +59,87 @@ class WebServer (WorkerThread) :
     self._web_server = None
 
     # Create UUID web-session and a session counter
-    uuid_obj, self._uid = generate_uuid()
-    log_print_inf("Web-server's session UUID: {}", self._uid)
+    self._uid = create_uid()
+    log_print_imp("Web-server's session UUID: {}", self._uid)
     self._session_counter = 0
 
     # Error
     self._error_code = Error(errOk)
     self._error_mutex = threading.RLock()
 
+    # Statistics members
+    self.__started_at = None
+    self.__count_time_flag = None
+
   # Destructor
   def __del__(self) :
     self._error_mutex = None
+    self.deinit_activity_counters()
 
     WorkerThread.__del__(self)
+
+  # Initializes activity counters
+  def init_activity_counters(self, count_time_flag = True) :
+    if self.__count_time_flag is not None :
+      return
+
+    self.__count_time_flag = count_time_flag
+
+  # Denitializes activity counters
+  def deinit_activity_counters(self) :
+    if self.__count_time_flag is None :
+      return
+
+    self.__count_time_flag = None
+
+    for key in ActivityCounter.get_all_counter_names() :
+     if not isinstance(key, tuple) or len(key) == 0 or key[0] != self.uid :
+       continue
+
+     counter = ActivityCounter.pop_counter(key)
+     if counter is not None :
+       del counter
+
+  # Adds statistics counter of the web-server
+  def add_counter(self, name_as_list, count_time_flag = None) :
+    if self.__count_time_flag is None :
+      return None
+
+    name = [ self.uid ]
+    name.extend(name_as_list)
+    return ActivityCounter.add(
+        tuple(name),
+        count_time_flag
+        if count_time_flag is not None else
+        self.__count_time_flag)
+
+  # Returns all statistics counters as Value
+  def get_counters_as_value(self) :
+    if self.__count_time_flag is None :
+      return Value(dict())
+
+    result = Value(dict())
+    result[_JSON_NAME_ID] = Value(self.uid)
+    if self.__started_at is not None :
+      result[_JSON_NAME_STARTED_AT] = Value(
+          "{:%Y-%m-%d %H:%M:%S}.{:06d}{:%z}".format(
+              self.__started_at, self.__started_at.microsecond,
+              self.__started_at))
+
+    if self._server_software is not None :
+      result[_JSON_NAME_VERSION] = Value(self._server_software)
+
+    for key in ActivityCounter.get_all_counter_names() :
+      if not isinstance(key, tuple) :
+        continue
+
+      key_list = list(key)
+      if len(key_list) == 0 or key_list[0] != self.uid :
+        continue
+
+      result.set_path(key_list[1:], ActivityCounter.get(key).get_as_value())
+
+    return result
 
   # Thread main function
   @log_function_body
@@ -134,12 +209,17 @@ class WebServer (WorkerThread) :
 
   @property
   def event_loop(self) :
-    """ Event loop is created by web-server """
+    """ Event loop is created by the web-server """
     return self._event_loop
 
   @property
+  def started_at(self) :
+    """ Return a start time of the web-server """
+    return self.__started_at
+
+  @property
   def uid(self) :
-    """ Return web-server UID """
+    """ Return the web-server UID """
     return self._uid
 
   # Private: initialize server
@@ -166,6 +246,7 @@ class WebServer (WorkerThread) :
       asyncio_server = self._event_loop.create_server(
           self._aiohttp_server, self._server_host, self._server_port)
       self._web_server = self._event_loop.run_until_complete(asyncio_server)
+      self.__started_at = datetime.datetime.now(tz = datetime.timezone.utc)
     except :
       error = Error(errCannotInitServer, sys.exc_info()[1])
       log_print_err("Web-server's initialization failed", error_code = error)
