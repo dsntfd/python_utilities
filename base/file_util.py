@@ -7,7 +7,7 @@ import os
 import sys
 
 # Export
-__all__ = ('create_unique_file_name', 'get_file_as_string', 'normalize_path')
+__all__ = ('create_unique_file_name', 'get_file_as_string')
 
 
 #
@@ -49,18 +49,3 @@ def get_file_as_string(path, charset = "utf-8") :
     return error, None
 
   return Error(errOk), result
-
-#
-# Normalizes a path
-#
-def normalize_path(path, backslash_flag = False) :
-  """ Normalize a path """
-  slash = "/"
-  if backslash_flag :
-    slash = "\\"
-
-  if path[-1:] != "\\" or \
-     path[-1:] != "/" :
-    path += slash
-
-  return path

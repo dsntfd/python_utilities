@@ -25,6 +25,7 @@ __all__ = ('log_print_imp', 'log_print_err', 'log_print_wrn', 'log_print_inf',
 # Global variables
 #
 _log_file_counter = 0
+_log_file_size = 0
 
 
 #
@@ -118,6 +119,8 @@ def log_print_parameters(name, parameters) :
 #
 def log_print(level, msg, *args, error_code = None, exec_time = 0.0,
               without_prefix = False, out_frame_index = 1, **kwargs) :
+  global _log_file_size
+
   if log._log_lock is None :
     return False
 
@@ -181,6 +184,12 @@ def log_print(level, msg, *args, error_code = None, exec_time = 0.0,
       log._log_file.write(bytes(msg, "utf-8"))
       log._log_file.write(bytes("\n", "utf-8"))
       log._log_file.flush()
+      _log_file_size += len(msg) + 1
+      if log._log_file_max_size != -1 and \
+         _log_file_size > log._log_file_max_size :
+        log._update_log_file()
+        _log_file_size = 0
+
     # Write in console
     if log._log_in_console :
       print(msg)
