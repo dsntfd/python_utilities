@@ -4,6 +4,7 @@
 
 import asyncio
 import hashlib
+import sys
 
 from aiopg.sa import create_engine
 from sqlalchemy.dialects import postgresql
