@@ -69,7 +69,8 @@ class PgDBConnector (DBConnector) :
           self.__query_counter.start(query_uid)
           if query_str is not None :
             query_hash = hashlib.sha256(query_str.encode("utf-8")).hexdigest()
-            counter = self.add_counter(["query_details", query_hash])
+            counter = self.add_counter(
+                ["query_details", query_hash], None, True)
             counter.start(query_uid)
             if query_hash not in self.__query_ids :
               log_print_imp("SQL query (id - {}): \n{}", query_hash, query_str)
@@ -101,9 +102,9 @@ class PgDBConnector (DBConnector) :
       log_print_err("Query executing failed", error_code = error)
       # Stop counter
       if self.__query_counter is not None :
-        self.__query_counter.stop(query_uid)
+        self.__query_counter.stop(query_uid, True)
         if counter is not None :
-          counter.stop(query_uid)
+          counter.stop(query_uid, True)
 
       return error, None
 
@@ -133,7 +134,7 @@ class PgDBConnector (DBConnector) :
   # Initializes activity counters
   def init_activity_counters(self, count_time_flag = True) :
     super().init_activity_counters(count_time_flag)
-    self.__query_counter = self.add_counter([_QUERY_COUNTER_NAME])
+    self.__query_counter = self.add_counter([_QUERY_COUNTER_NAME], None, True)
 
   # Denitializes activity counters
   def deinit_activity_counters(self) :

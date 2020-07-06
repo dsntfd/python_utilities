@@ -101,7 +101,8 @@ class WebServer (WorkerThread) :
        del counter
 
   # Adds statistics counter of the web-server
-  def add_counter(self, name_as_list, count_time_flag = None) :
+  def add_counter(
+      self, name_as_list, count_time_flag = None, count_error_flag = False) :
     if self.__count_time_flag is None :
       return None
 
@@ -111,7 +112,8 @@ class WebServer (WorkerThread) :
         tuple(name),
         count_time_flag
         if count_time_flag is not None else
-        self.__count_time_flag)
+        self.__count_time_flag,
+        count_error_flag)
 
   # Returns all statistics counters as Value
   def get_counters_as_value(self) :

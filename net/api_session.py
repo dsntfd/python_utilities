@@ -165,14 +165,14 @@ class ApiSession (SessionIn) :
       ## Call function
       ### Start counter
       counter = self.web_server.add_counter(
-          [self.counter_name, "api", function_lower])
+          [self.counter_name, "api", function_lower], None, True)
       if counter is not None : counter.start(self.uid)
 
       function_result, error = await self._function_map[function_lower](
           self, api_request[function])
 
       ### Stop counter
-      if counter is not None : counter.stop(self.uid)
+      if counter is not None : counter.stop(self.uid, err_failure(error))
 
       ### Check result
       if err_failure(error) :

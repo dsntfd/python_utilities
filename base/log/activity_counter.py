@@ -14,6 +14,7 @@ __all__ = ('ActivityCounter',)
 # Json names
 _JSON_NAME_STARTED_AT = "started_at"
 _JSON_NAME_COUNTER = "counter"
+_JSON_NAME_ERROR_COUNTER = "error_counter"
 _JSON_NAME_LAST_CALLED_AT = "last_called_at"
 _JSON_NAME_TOTAL_TIME = "total_time"
 _JSON_NAME_MIN_TIME = "min_time"
@@ -24,10 +25,11 @@ class ActivityCounter :
   __counters = dict()
 
   @classmethod
-  def add(cls, name, count_time_flag = True) :
+  def add(cls, name, count_time_flag = True, count_error_flag = False) :
     counter = cls.__counters.get(name)
     if counter is None :
-      cls.__counters[name] = cls(cls.__create_key, name, count_time_flag)
+      cls.__counters[name] = cls(
+          cls.__create_key, name, count_time_flag, count_error_flag)
 
     return cls.__counters.get(name)
 
@@ -56,7 +58,7 @@ class ActivityCounter :
     return False
 
   @classmethod
-  def stop(cls, name, id = "") :
+  def stop(cls, name, id = "", error_flag = False) :
     item = cls.__counters.get(name)
     if item is not None :
       return item.stop(id)
@@ -67,7 +69,9 @@ class ActivityCounter :
   def now() :
     return datetime.datetime.now(tz = datetime.timezone.utc)
 
-  def __init__(self, create_key, name, count_time_flag = True) :
+  def __init__(
+      self, create_key, name, count_time_flag = True,
+      count_error_flag = False) :
     assert(create_key == ActivityCounter.__create_key), \
         "ActivityCounter objects must be created using ActivityCounter.add"
     self.__items = dict()
@@ -75,7 +79,9 @@ class ActivityCounter :
     self.__last_called_at = None
     self.__name = name
     self.__count_time_flag = count_time_flag
+    self.__count_error_flag = count_error_flag
     self.__counter = 0
+    self.__error_counter = 0
     self.__time_counter = datetime.timedelta() if count_time_flag else None
     self.__min_time = None
     self.__max_time = None
@@ -93,17 +99,14 @@ class ActivityCounter :
     self.__items[id] = item
     return True
 
-  def stop(self, id = "") :
+  def stop(self, id = "", error_flag = False) :
     item = self.__items.pop(id, None)
     if item is None :
       return False
 
-    if not self.__count_time_flag :
-      self.__counter += 1
-      self.__last_called_at = ActivityCounter.now()
-    elif self.__count_time_flag and item.started_at is not None :
-      self.__counter += 1
-      self.__last_called_at = ActivityCounter.now()
+    self.__counter += 1
+    self.__last_called_at = ActivityCounter.now()
+    if self.__count_time_flag and item.started_at is not None :
       time_delta = self.__last_called_at - item.started_at
       self.__time_counter += time_delta
       if self.__min_time is None :
@@ -112,6 +115,9 @@ class ActivityCounter :
       else :
         self.__min_time = min([ self.__min_time, time_delta ])
         self.__max_time = max([ self.__max_time, time_delta ])
+
+    if self.__count_error_flag and error_flag :
+      self.__error_counter += 1
 
     del item
     return True
@@ -138,6 +144,9 @@ class ActivityCounter :
       if self.__min_time is not None :
         result[_JSON_NAME_MIN_TIME] = Value(self.__min_time.total_seconds())
         result[_JSON_NAME_MAX_TIME] = Value(self.__max_time.total_seconds())
+
+    if self.__count_error_flag :
+      result[_JSON_NAME_ERROR_COUNTER] = Value(self.__error_counter)
 
     return result
 
