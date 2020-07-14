@@ -168,7 +168,7 @@ class ApiSession (SessionIn) :
           [self.counter_name, "api", function_lower], None, True)
       if counter is not None : counter.start(self.uid)
 
-      function_result, error = await self._function_map[function_lower](
+      error, function_result = await self._function_map[function_lower](
           self, api_request[function])
 
       ### Stop counter
