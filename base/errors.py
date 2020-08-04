@@ -82,7 +82,7 @@ def error_to_json(error) :
   """
   from .value import serialize_value_to_json
 
-  json_text, error_ret = serialize_value_to_json(error_to_value(error))
+  error_ret, json_text = serialize_value_to_json(error_to_value(error))
   if err_failure(error_ret) :
     return "{\"error\":{\"id\":1,\"description\":\"Oops!\"}}"
 

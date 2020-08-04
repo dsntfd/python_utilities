@@ -122,7 +122,7 @@ class ApiSession (SessionIn) :
       json = json.encode(self._charset).decode(self._charset)
 
     # Parse body
-    api_request, error = deserialize_json_to_value(json, None, self._charset)
+    error, api_request = deserialize_json_to_value(json, None, self._charset)
     if err_failure(error) :
       self._error_code = error
       log_print_err(None, error_code = self._error_code)
@@ -184,7 +184,7 @@ class ApiSession (SessionIn) :
       result[function] = function_result
 
     # Generate json
-    result_body, error = serialize_value_to_json(result, self._charset)
+    error, result_body = serialize_value_to_json(result, self._charset)
     if err_failure(error) :
       self._error_code = error
       log_print_err(None, error_code = self._error_code)

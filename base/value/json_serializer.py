@@ -33,14 +33,14 @@ def serialize_value_to_json(root_value, charset = "utf-8") :
     error_code = Error(errInvalidParameter,
                        "Parameter \'root_value\' is invalid")
     log_print_err(None, error_code = error_code)
-    return result, error_code
+    return error_code, result
 
-  result, error_code = \
+  error_code, result = \
       _serializing_function_dict[root_value.value_type](root_value, charset)
   if err_failure(error_code) :
     log_print_err(None, error_code = error_code)
 
-  return result, error_code
+  return error_code, result
 
 #
 # Function deserialize_json_to_value
@@ -60,22 +60,22 @@ def deserialize_json_to_value(json_text, scheme_value = None,
   except :
     error_code = Error(errInvalidParameter, sys.exc_info()[1])
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Fill structure of Value objects
   value_type = Value.get_value_type(json_value, False)
   if value_type == Type.NONE :
     error_code = Error(errInvalidParameter, "Json has an unknown value type")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Deserialize a json value into a Value
-  result, error_code = _deserializing_function_dict[value_type](
+  error_code, result = _deserializing_function_dict[value_type](
                        json_value, scheme_value, charset)
   if err_failure(error_code) :
     log_print_err(None, error_code = error_code)
 
-  return result, error_code
+  return error_code, result
 
 #
 # Help functions for serializing
@@ -84,16 +84,16 @@ def _serialize_boolean_value(value, charset) :
   """ Serialize boolean value """
   error_code = Error(errOk)
   if value is None :
-    return NULL_STRING, error_code
+    return error_code, NULL_STRING
 
   result = "true" if value.value else "false"
-  return result, error_code
+  return error_code, result
 
 def _serialize_dictionary_value(value, charset) :
   """ Serialize dictionary value """
   error_code = Error(errOk)
   if value is None :
-    return NULL_STRING, error_code
+    return error_code, NULL_STRING
 
   result = "{"
   comma = ""
@@ -102,52 +102,52 @@ def _serialize_dictionary_value(value, charset) :
       key = lambda value: (value[1].order_number, value[0])) :
     result += comma
     result += "\"" + key + "\":"
-    result_str, error_code = \
+    error_code, result_str = \
         _serializing_function_dict[child_value.value_type](child_value, charset)
     if err_failure(error_code) :
       log_print_err(None, error_code = error_code)
-      return "", error_code
+      return error_code, ""
 
     result += result_str
     comma = ","
 
   result += "}"
-  return result, error_code
+  return error_code, result
 
 def _serialize_list_value(value, charset) :
   """ Serialize list value """
   error_code = Error(errOk)
   if value is None :
-    return NULL_STRING, error_code
+    return error_code, NULL_STRING
 
   result = "["
   comma = ""
   for child_value in sorted(value.value,
                             key = lambda value: (value.order_number)) :
     result += comma
-    result_str, error_code = \
+    error_code, result_str = \
         _serializing_function_dict[child_value.value_type](child_value, charset)
     if err_failure(error_code) :
       log_print_err(None, error_code = error_code)
-      return "", error_code
+      return error_code, ""
 
     result += result_str
     comma = ","
 
   result += "]"
-  return result, error_code
+  return error_code, result
 
 def _serialize_none_value(value, charset) :
-  return NULL_STRING, Error(errOk)
+  return Error(errOk), NULL_STRING
 
 def _serialize_simple_value(value, charset) :
   """ Serialize simple value """
   error_code = Error(errOk)
   if value is None :
-    return NULL_STRING, error_code
+    return error_code, NULL_STRING
 
   result = "{}".format(value.value)
-  return result, error_code
+  return error_code, result
 
 def _escape_json_string(raw_str) :
   """ Escape special characters """
@@ -185,7 +185,7 @@ def _serialize_string_value(value, charset) :
   """ Serialize string value """
   error_code = Error(errOk)
   if value is None :
-    return NULL_STRING, error_code
+    return error_code, NULL_STRING
 
   # Encode result by charset
   result = value.value.encode(charset).decode(charset)
@@ -193,7 +193,7 @@ def _serialize_string_value(value, charset) :
   result = _escape_json_string(result)
   # Print value
   result = "\"" + result + "\""
-  return result, error_code
+  return error_code, result
 
 #: Dictionary of functions for serializing by types
 _serializing_function_dict = {
@@ -216,14 +216,14 @@ def _deserialize_boolean_value(json_value, value_scheme, charset) :
   if value_scheme is not None and value_scheme.value_type != Type.BOOLEAN :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = Value(value_type = value_scheme.value_type) \
            if value_scheme is not None else \
            Value(value_type = Type.BOOLEAN)
   result.value = json_value
-  return result, error_code
+  return error_code, result
 
 def _deserialize_dictionary_value(json_value, value_scheme, charset) :
   """ Deserialize dictionary value """
@@ -232,7 +232,7 @@ def _deserialize_dictionary_value(json_value, value_scheme, charset) :
   if value_scheme is not None and value_scheme.value_type != Type.DICTIONARY :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = \
@@ -251,24 +251,24 @@ def _deserialize_dictionary_value(json_value, value_scheme, charset) :
     if value is not None and child_value_type == Type.NONE :
       error_code = Error(errInvalidParameter, "Json has an unknown value type")
       log_print_err(None, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
     # Get a scheme of the child item
     child_scheme = value_scheme[key] if value_scheme is not None else None
     if value_scheme is not None and child_scheme is None :
       error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
       log_print_err(None, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
     if value is not None :
-      result[key], error_code = _deserializing_function_dict[child_value_type](
+      error_code, result[key] = _deserializing_function_dict[child_value_type](
                                 value, child_scheme, charset)
     else :
       result[key] = Value()
 
     if err_failure(error_code) :
       log_print_err("Field is invalid:\'{}\'", key, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
     # Set a order number as into incoming json
     result[key].order_number = order_number
@@ -280,9 +280,9 @@ def _deserialize_dictionary_value(json_value, value_scheme, charset) :
       if not value.optional and key not in result :
         error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
         log_print_err("Field isn't filled:\'{}\'", key, error_code = error_code)
-        return None, error_code
+        return error_code, None
 
-  return result, error_code
+  return error_code, result
 
 def _deserialize_double_value(json_value, value_scheme, charset) :
   """ Deserialize double value """
@@ -291,14 +291,14 @@ def _deserialize_double_value(json_value, value_scheme, charset) :
   if value_scheme is not None and value_scheme.value_type != Type.DOUBLE :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = Value(value_type = value_scheme.value_type) \
            if value_scheme is not None else \
            Value(value_type = Type.DOUBLE)
   result.value = json_value
-  return result, error_code
+  return error_code, result
 
 def _deserialize_integer_value(json_value, value_scheme, charset) :
   """ Deserialize integer value """
@@ -308,14 +308,14 @@ def _deserialize_integer_value(json_value, value_scheme, charset) :
      not value_scheme.is_matching_type(json_value) :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = Value(value_type = value_scheme.value_type) \
            if value_scheme is not None else \
            Value(value_type = Type.INTEGER)
   result.value = json_value
-  return result, error_code
+  return error_code, result
 
 def _deserialize_list_value(json_value, value_scheme, charset) :
   """ Deserialize list value """
@@ -324,7 +324,7 @@ def _deserialize_list_value(json_value, value_scheme, charset) :
   if value_scheme is not None and value_scheme.value_type != Type.LIST :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = \
@@ -342,7 +342,7 @@ def _deserialize_list_value(json_value, value_scheme, charset) :
     if child_value_type == Type.NONE :
       error_code = Error(errInvalidParameter, "Json has an unknown value type")
       log_print_err(None, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
     # Get a scheme of the child item
     child_scheme = value_scheme[0].clone() \
@@ -352,17 +352,17 @@ def _deserialize_list_value(json_value, value_scheme, charset) :
     if value_scheme is not None and child_scheme is None :
       error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
       log_print_err(None, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
-    child_item, error_code = _deserializing_function_dict[child_value_type](
+    error_code, child_item = _deserializing_function_dict[child_value_type](
                              value, child_scheme, charset)
     if err_failure(error_code) :
       log_print_err(None, error_code = error_code)
-      return None, error_code
+      return error_code, None
 
     result.value.append(child_item)
 
-  return result, error_code
+  return error_code, result
 
 def _deserialize_string_value(json_value, value_scheme, charset) :
   """ Deserialize string value """
@@ -371,14 +371,14 @@ def _deserialize_string_value(json_value, value_scheme, charset) :
   if value_scheme is not None and value_scheme.value_type != Type.STRING :
     error_code = Error(errInvalidParameter, "Json doesn't match the scheme")
     log_print_err(None, error_code = error_code)
-    return None, error_code
+    return error_code, None
 
   # Create Value or take out of scheme
   result = Value(value_type = value_scheme.value_type) \
            if value_scheme is not None else \
            Value(value_type = Type.STRING)
   result.value = json_value.encode(charset).decode(charset)
-  return result, error_code
+  return error_code, result
 
 #: Dictionary of functions for serializing by types
 _deserializing_function_dict = {
