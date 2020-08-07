@@ -224,10 +224,10 @@ class Value :
 
     return result
 
-  def find_path_of_type(self, path, type, real_value = False) :
+  def find_path_of_type(self, path, type, real_value = False, default = None) :
     result = self.find_path(path)
     if result is None or result.value_type != type :
-      return None
+      return default
 
     if real_value :
       real_result = result.value
@@ -244,23 +244,23 @@ class Value :
 
     return result
 
-  def find_bool_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.BOOLEAN, real_value)
+  def find_bool_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.BOOLEAN, real_value, default)
 
-  def find_int_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.INTEGER, real_value)
+  def find_int_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.INTEGER, real_value, default)
 
-  def find_double_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.DOUBLE, real_value)
+  def find_double_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.DOUBLE, real_value, default)
 
-  def find_string_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.STRING, real_value)
+  def find_string_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.STRING, real_value, default)
 
-  def find_dict_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.DICTIONARY, real_value)
+  def find_dict_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.DICTIONARY, real_value, default)
 
-  def find_list_path(self, path, real_value = False) :
-    return self.find_path_of_type(path, Type.LIST, real_value)
+  def find_list_path(self, path, real_value = False, default = None) :
+    return self.find_path_of_type(path, Type.LIST, real_value, default)
 
   def set_path(self, path, value) :
     if not isinstance(path, list) :
