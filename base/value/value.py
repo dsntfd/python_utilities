@@ -229,20 +229,7 @@ class Value :
     if result is None or result.value_type != type :
       return default
 
-    if real_value :
-      real_result = result.value
-      if result.value_type == Type.LIST :
-        real_result = list()
-        for item in result.value :
-          real_result.append(item.value)
-      elif result.value_type == Type.DICTIONARY :
-        real_result = dict()
-        for key, value in result.value.items() :
-          real_result[key] = value.value
-
-      result = real_result
-
-    return result
+    return result.to_real_value() if real_value else result
 
   def find_bool_path(self, path, real_value = False, default = None) :
     return self.find_path_of_type(path, Type.BOOLEAN, real_value, default)
@@ -316,6 +303,22 @@ class Value :
         result = value.is_valid()
         if not result :
           break
+
+    return result
+
+  def to_real_value(self) :
+    if self.value_type != Type.LIST and self.value_type != Type.DICTIONARY :
+      return self.value
+
+    result = None
+    if self.value_type == Type.LIST :
+      result = list()
+      for item in self.value :
+        result.append(item.to_real_value())
+    elif self.value_type == Type.DICTIONARY :
+      result = dict()
+      for key, value in self.value.items() :
+        result[key] = value.to_real_value()
 
     return result
 
