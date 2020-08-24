@@ -168,8 +168,14 @@ class ApiSession (SessionIn) :
           [self.counter_name, "api", function_lower], None, True)
       if counter is not None : counter.start(self.uid)
 
-      error, function_result = await self._function_map[function_lower](
-          self, api_request[function])
+      try :
+        error, function_result = await self._function_map[function_lower](
+            self, api_request[function])
+      except :
+        error = Error(errException, sys.exc_info()[1])
+        log_print_err(
+            "Exception has occured during calling function '{}''",
+            function_lower, error_code = error)
 
       ### Stop counter
       if counter is not None : counter.stop(self.uid, err_failure(error))
