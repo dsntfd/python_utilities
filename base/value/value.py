@@ -226,7 +226,7 @@ class Value :
 
   def find_path_of_type(self, path, type, real_value = False, default = None) :
     result = self.find_path(path)
-    if result is None or result.value_type != type :
+    if result is None or not result.is_valid_for_type(type) :
       return default
 
     return result.to_real_value() if real_value else result
@@ -321,6 +321,10 @@ class Value :
         result[key] = value.to_real_value()
 
     return result
+
+  def is_valid_for_type(self, type) :
+    return self.value_type == type or \
+           self.value_type == Type.INTEGER and type == Type.DOUBLE
 
   @property
   def default(self) :
@@ -510,8 +514,7 @@ class Value :
 
   @staticmethod
   def _check_simple_type_by_scheme(value, scheme, log_flag) :
-    if value.value_type != scheme.value_type and \
-       (value.value_type != Type.INTEGER or scheme.value_type != Type.DOUBLE) :
+    if not value.is_valid_for_type(scheme.value_type) :
       error_code = Error(
           errInvalidType,
           "Value must be {} but it's {}".format(
