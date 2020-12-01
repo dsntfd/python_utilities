@@ -200,8 +200,23 @@ class ApiSession (SessionIn) :
 
   async def _do_work(self) :
     """ Main function for work """
+    body = ""
+    # Check request
+    if self.request is None:
+      self._error_code = \
+          Error(errObjNotInit, "Web-request hasn't been initialized")
+      log_print_err(None, error_code = self._error_code)
+      body = error_to_json(self.error)
+
+    if err_success(self.error) and err_failure(self.request.processing_error) :
+      self._error_code = self.request.processing_error
+      log_print_err(None, error_code = self._error_code)
+      body = error_to_json(self.error)
+
     # Get result's body
-    body = await self._get_response_body()
+    if err_success(self.error) :
+      body = await self._get_response_body()
+
     body_binary = body.encode(self._charset)
 
     # Create response

@@ -70,7 +70,8 @@ async def dump_request(request) :
       if request.body is not None :
         result.extend(request.body)
   except :
-    error = Error(errInvalidParameter, sys.exc_info()[1])
+    error = Error(errInvalidObject, sys.exc_info()[1])
+    request.processing_error = error
     log_print_err("Can't read body of request", error_code = error)
 
   return bytes(result)

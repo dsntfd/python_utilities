@@ -7,6 +7,9 @@ import datetime
 import sys
 import threading
 
+from aiohttp import abc
+from aiohttp import http_parser
+from aiohttp import streams
 from aiohttp import web
 from ..base.errors import *
 from ..base.log import *
@@ -37,11 +40,13 @@ class WebServer (WorkerThread) :
   # Constructor
   def __init__(
       self, server_host, server_port, server_db = None,
-      init_fun = None, deinit_fun = None, server_software = None) :
+      init_fun = None, deinit_fun = None, server_software = None,
+      request_max_size: int = 1024**2) :
     # Initialize thread
     WorkerThread.__init__(self, 0, 1, "WebServerThread")
 
     # Web-server parameters
+    self._request_max_size = request_max_size
     self._server_host = server_host
     self._server_port = server_port
     self._server_software = server_software
@@ -215,6 +220,11 @@ class WebServer (WorkerThread) :
     return self._event_loop
 
   @property
+  def request_max_size(self):
+    """ Return a request maximal size """
+    return self._request_max_size
+
+  @property
   def started_at(self) :
     """ Return a start time of the web-server """
     return self.__started_at
@@ -244,7 +254,8 @@ class WebServer (WorkerThread) :
           return error
 
       # Initialize web-server
-      self._aiohttp_server = web.Server(self._request_handler)
+      self._aiohttp_server = web.Server(
+          self._request_handler, request_factory = self._make_request)
       asyncio_server = self._event_loop.create_server(
           self._aiohttp_server, self._server_host, self._server_port)
       self._web_server = self._event_loop.run_until_complete(asyncio_server)
@@ -255,6 +266,20 @@ class WebServer (WorkerThread) :
       return error
 
     return Error(errOk)
+
+  @log_function_body
+  def _make_request(self,
+                    message: http_parser.RawRequestMessage,
+                    payload: streams.StreamReader,
+                    protocol: web.RequestHandler,
+                    writer: abc.AbstractStreamWriter,
+                    task: 'asyncio.Task[None]') \
+                    -> web.BaseRequest :
+    result =  web.BaseRequest(
+        message, payload, protocol, writer, task, self._event_loop,
+        client_max_size = self._request_max_size)
+    result.processing_error = Error(errOk)
+    return result
 
   # Private: deinitialize server
   def _deinit_server(self) :
@@ -322,12 +347,14 @@ class WebServer (WorkerThread) :
 @log_function_body
 def run_web_server(
     server_host, server_port, session_factory, db = None,
-    init_fun = None, deinit_fun = None, server_software = None) :
+    init_fun = None, deinit_fun = None, server_software = None,
+    request_max_size: int = 1024**2) :
   global _web_server
 
   set_session_factory(session_factory)
   _web_server = WebServer(
-      server_host, server_port, db, init_fun, deinit_fun, server_software)
+      server_host, server_port, db, init_fun, deinit_fun, server_software,
+      request_max_size)
   result = _web_server.start()
   if err_failure(result) :
     log_print_err("Web-server failed on starting", result)
