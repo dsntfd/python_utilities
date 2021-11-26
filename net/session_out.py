@@ -69,6 +69,13 @@ class SessionOut (Session) :
       return self._error_code
 
     # Run request
+    ## Start counter
+    counter = self.web_server.add_counter(
+        [self.counter_name, "request"], None, True)
+    if counter is not None : counter.start(self.uid)
+
+    ## Start request
+    error = Error(errOk)
     try :
       async with aiohttp.ClientSession() as session :
         response = await session.request(
@@ -95,12 +102,14 @@ class SessionOut (Session) :
         log_print_inf("Requested url: {}", response.request_info.url)
         await self._set_response(response)
     except :
-      self._error_code = Error(errRequestFailed, sys.exc_info()[1])
+      self._error_code = error = Error(errRequestFailed, sys.exc_info()[1])
       log_print_err("Error occured during asking \'{}\'", self.url,
-                    error_code = self._error_code)
-      return self._error_code
+                    error_code = error)
 
-    return Error(errOk)
+    ## Stop counter
+    if counter is not None : counter.stop(self.uid, err_failure(error))
+
+    return error
 
   @log_async_function_body()
   async def _set_request(self, response) :

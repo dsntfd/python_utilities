@@ -234,6 +234,12 @@ class WebServer (WorkerThread) :
     """ Return the web-server UID """
     return self._uid
 
+  # Static
+  def web_server() :
+    """ Return the web-server """
+    global _web_server
+    return _web_server
+
   # Private: initialize server
   def _init_server(self) :
     try :

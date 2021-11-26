@@ -32,7 +32,7 @@ class WorkerThread (threading.Thread) :
   def run(self) :
     log_print_inf("Thread started - {}", self.name)
     while True :
-      # Check a stop conditon
+      # Check a stop condition
       with self.stop_mutex :
         if self.stop_flag :
           break
