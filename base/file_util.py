@@ -32,6 +32,9 @@ def create_unique_file_name(file_prefix, file_affix, file_ext = "") :
 # Gets a file as string
 #
 def get_file_as_string(path, charset = "utf-8") :
+  from .errors import errException
+  from .errors import errObjNotFound
+  from .errors import errOk
   from .errors import Error
   from .log import log_print_err
 
