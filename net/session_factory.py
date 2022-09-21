@@ -25,7 +25,7 @@ async def create_session(web_server, request) :
   global _session_factory
 
   log_print_vrb("Url's path: {}".format(request.path))
-  url_path = request.path.lower()
+
   result = None
   if _session_factory is not None :
     result = await _session_factory(web_server, request)
