@@ -6,6 +6,7 @@ import copy
 import enum
 import sys
 
+from typing_extensions import Self
 from ..errors import *
 from ..log import *
 
@@ -127,11 +128,41 @@ class Value :
 
     return item in self._value
 
-  def __eq__(self, other) :
-    if self._value is None :
+  def __eq__(self, other):
+    if self._value is None:
       return other is None
 
     return self._value == other
+
+  def __ne__(self, other):
+    if self._value is None:
+      return other is not None
+
+    return self._value != other
+
+  def __lt__(self, other):
+    if self._value is None:
+      return False if other is None else True
+
+    return self._value < other
+
+  def __le__(self, other):
+    if self._value is None:
+      return True
+
+    return self._value <= other
+
+  def __gt__(self, other):
+    if self._value is None:
+      return False
+
+    return self._value > other
+
+  def __ge__(self, other):
+    if self._value is None:
+      return True if other is None else False
+
+    return self._value >= other
 
   def __getitem__(self, index) :
     error_code = Error(errOk)
@@ -497,15 +528,15 @@ class Value :
     return True
 
   @staticmethod
-  def _get_type_check_by_scheme(value) :
+  def _get_type_check_by_scheme(value: Self) -> Error:
     if value.value_type == Type.BOOLEAN or \
        value.value_type == Type.INTEGER or \
        value.value_type == Type.DOUBLE or \
-       value.value_type == Type.STRING :
+       value.value_type == Type.STRING:
       return Value._check_simple_type_by_scheme, Error(errOk)
-    elif value.value_type == Type.DICTIONARY :
+    elif value.value_type == Type.DICTIONARY:
       return Value._check_dictionary_by_scheme, Error(errOk)
-    elif value.value_type == Type.LIST :
+    elif value.value_type == Type.LIST:
       return Value._check_list_by_scheme, Error(errOk)
 
     error_code = Error(errUnknown, "Value has unknow type")
@@ -514,6 +545,9 @@ class Value :
 
   @staticmethod
   def _check_simple_type_by_scheme(value, scheme, log_flag) :
+    if scheme.value_type == Type.NONE:
+      return Error(errOk)
+
     if not value.is_valid_for_type(scheme.value_type) :
       error_code = Error(
           errInvalidType,
@@ -526,6 +560,9 @@ class Value :
 
   @staticmethod
   def _check_dictionary_by_scheme(value, scheme, log_flag) :
+    if scheme.value_type == Type.NONE:
+      return Error(errOk)
+
     if value.value_type != scheme.value_type :
       error_code = Error(
           errInvalidType,
@@ -579,6 +616,9 @@ class Value :
 
   @staticmethod
   def _check_list_by_scheme(value, scheme, log_flag) :
+    if scheme.value_type == Type.NONE:
+      return Error(errOk)
+
     if value.value_type != scheme.value_type :
       error_code = Error(
           errInvalidType,
